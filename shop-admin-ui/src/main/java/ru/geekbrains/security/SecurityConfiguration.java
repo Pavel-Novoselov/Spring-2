@@ -18,7 +18,6 @@ import javax.servlet.http.HttpServletResponse;
 
 @EnableWebSecurity
 public class SecurityConfiguration {
-
     @Bean
     public UserDetailsService userDetailsService(UserRepository userRepository){
         return new UserAuthService(userRepository);
@@ -77,10 +76,10 @@ public class SecurityConfiguration {
 //                    .and().formLogin();
             http
                     .authorizeRequests()
-                    .antMatchers("/admin/user/new").hasRole("ROOT")
-                    .antMatchers("/admin/user/**").hasAnyRole("ROOT", "ADMIN", "ROOT")
-                    .antMatchers("/admin/product/**").hasAnyRole("ROOT", "ADMIN", "MANAGER")
-                    .antMatchers("/admin/**").hasAnyRole("GUEST", "ROOT", "ADMIN", "MANAGER")
+                    .antMatchers("/**").hasRole("ADMIN")
+//                    .antMatchers("/admin/user/**").hasAnyRole("ROOT", "ADMIN", "ROOT")
+//                    .antMatchers("/admin/product/**").hasAnyRole("ROOT", "ADMIN", "MANAGER")
+//                    .antMatchers("/admin/**").hasAnyRole("GUEST", "ROOT", "ADMIN", "MANAGER")
                     .and()
                     .formLogin()
                     .loginPage("/login")

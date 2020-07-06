@@ -40,6 +40,11 @@ public class CategoryService {
         categoryRepository.deleteById(id);
     }
 
+    @Transactional
+    public Page<Category> filterName (String partName, Pageable pageable) {
+        String pName = partName+"%";
+        return categoryRepository.findByTitleLike(pName, pageable);
+    }
 
     @Transactional
     public void save(Category category) {

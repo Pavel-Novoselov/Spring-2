@@ -8,8 +8,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import ru.geekbrains.model.Category;
 import ru.geekbrains.model.Product;
 import ru.geekbrains.repo.CategoryRepository;
+import ru.geekbrains.service.CategoryService;
 import ru.geekbrains.service.ProductService;
 
 import java.math.BigDecimal;
@@ -21,56 +23,43 @@ public class CategoryController {
     private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
 
     @Autowired
-    private ProductService productService;
+    private CategoryService categoryService;
 
     @Autowired
     private CategoryRepository categoryRepository;
 
     @GetMapping
-    public String productList(Model model,
-                              @RequestParam(name = "minPrice", required = false, defaultValue = "1.00") BigDecimal minPrice,
-                              @RequestParam(name = "maxPrice", required = false, defaultValue = "100000000000.00") BigDecimal maxPrice,
+    public String categoryList(Model model,
                               @RequestParam(name = "partName", required = false, defaultValue = "") String partName,
                               @RequestParam(name = "page") Optional<Integer> page,
                               @RequestParam(name = "size") Optional<Integer> size) {
-        logger.info("Product list");
-        Page<Product> productsPage;
-        if (!partName.equals("")){
+        logger.info("Category list");
+        Page<Category> categoryPage;
             System.out.println("partName!=null");
-            productsPage = productService.filterByPriceAndName(minPrice, maxPrice, partName,
+            categoryPage = categoryService.filterName(partName,
                     PageRequest.of(page.orElse(1) - 1, size.orElse(5)));
 
-        } else{
-            System.out.println("partName==null");
-            productsPage = productService.filterByPrice(minPrice, maxPrice,
-                    PageRequest.of(page.orElse(1) - 1, size.orElse(5)));
-        }
+        model.addAttribute("categoryPage", categoryPage);
+        model.addAttribute("prevPageNumber", categoryPage.hasPrevious() ? categoryPage.previousPageable().getPageNumber() + 1 : -1);
+        model.addAttribute("nextPageNumber", categoryPage.hasNext() ? categoryPage.nextPageable().getPageNumber() + 1 : -1);
 
-        model.addAttribute("productsPage", productsPage);
-        model.addAttribute("prevPageNumber", productsPage.hasPrevious() ? productsPage.previousPageable().getPageNumber() + 1 : -1);
-        model.addAttribute("nextPageNumber", productsPage.hasNext() ? productsPage.nextPageable().getPageNumber() + 1 : -1);
-
-        return "products";
+        return "categories";
     }
 
     @GetMapping("new")
-    public String createProduct(Model model) {
-        logger.info("Create product form");
+    public String createCategory(Model model) {
+        logger.info("Create category form");
         System.out.println("1 step");
-        model.addAttribute("product", new Product());
-        model.addAttribute("categories", categoryRepository.findAll());
-        System.out.println(model.getAttribute("product"));
-        System.out.println(model.getAttribute("categories"));
-        return "product";
+        model.addAttribute("category", new Category());
+        return "category";
     }
 
     @PostMapping
-    public String saveProduct(Product product) {
-        System.out.println(product.getCategory());
-        logger.info("Save product method");
+    public String saveCategory(Category category) {
+        logger.info("Save category method");
 
-        productService.save(product);
-        return "redirect:/product";
+        categoryService.save(category);
+        return "redirect:/category";
     }
 
 //    @GetMapping("edit")
@@ -93,17 +82,17 @@ public class CategoryController {
 //    }
 
     @GetMapping("edit")
-    public String editProduct(@RequestParam long id, Model model){
+    public String editCategory(@RequestParam long id, Model model){
 
-        model.addAttribute("product", productService.findById(id));
-        return "product";
+        model.addAttribute("category", categoryService.findById(id));
+        return "category";
 
     }
 
     @DeleteMapping
-    public String deleteProduct(@RequestParam Long id){
+    public String deleteCategory(@RequestParam Long id){
         System.out.println("delete");
-        productService.deleteProduct(id);
-        return "redirect:/product";
+        categoryService.deleteCategory(id);
+        return "redirect:/category";
     }
 }
