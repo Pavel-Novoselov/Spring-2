@@ -13,11 +13,11 @@ create table if not exists users
 GO
 create table if not exists users_roles (user_id bigint not null, role_id bigint not null, primary key (user_id, role_id)) engine=InnoDB;
 GO
-alter table roles add constraint UK_ofx66keruapi6vyqpv6f2or37 unique (name);
+alter table roles add constraint UK_ofx66keruapi6vyqpv6f2or3711 unique (name);
 GO
-alter table users_roles add constraint FKj6m8fwv7oqv74fcehir1a9ffy foreign key (role_id) references roles (id);
+alter table users_roles add constraint FKj6m8fwv7oqv74fcehir1a9ffy11 foreign key (role_id) references roles (id);
 GO
-alter table users_roles add constraint FK2o0jvgh89lemvvo17cbqvdxaa foreign key (user_id) references users (id);
+alter table users_roles add constraint FK2o0jvgh89lemvvo17cbqvdxaa11 foreign key (user_id) references users (id);
 GO
 
 create table if not exists products
@@ -42,7 +42,7 @@ create table if not exists categories
  engine=InnoDB;
 GO
 
-alter table products add constraint FK_category foreign key (category_id) references categories (id);
+alter table products add constraint FK_category11 foreign key (category_id) references categories (id);
 GO
 
 

@@ -3,108 +3,87 @@ package ru.geekbrains.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import ru.geekbrains.model.Product;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import ru.geekbrains.controller.repr.ProductRepr;
+import ru.geekbrains.repo.BrandRepository;
 import ru.geekbrains.repo.CategoryRepository;
+import ru.geekbrains.repo.PictureRepository;
 import ru.geekbrains.service.ProductService;
-
-import java.math.BigDecimal;
-import java.util.Optional;
 
 @RequestMapping("/product")
 @Controller
 public class ProductController {
-
     private static final Logger logger = LoggerFactory.getLogger(ProductController.class);
 
-    @Autowired
-    private ProductService productService;
+    private final ProductService productService;
+
+    private final CategoryRepository categoryRepository;
+
+    private final BrandRepository brandRepository;
+
+    private final PictureRepository pictureRepository;
 
     @Autowired
-    private CategoryRepository categoryRepository;
+    public ProductController(ProductService productService, CategoryRepository categoryRepository, BrandRepository brandRepository, PictureRepository pictureRepository) {
+        this.productService = productService;
+        this.categoryRepository = categoryRepository;
+        this.brandRepository = brandRepository;
+        this.pictureRepository = pictureRepository;
+    }
 
     @GetMapping
-    public String productList(Model model,
-                              @RequestParam(name = "minPrice", required = false, defaultValue = "1.00") BigDecimal minPrice,
-                              @RequestParam(name = "maxPrice", required = false, defaultValue = "100000000000.00") BigDecimal maxPrice,
-                              @RequestParam(name = "partName", required = false, defaultValue = "") String partName,
-                              @RequestParam(name = "page") Optional<Integer> page,
-                              @RequestParam(name = "size") Optional<Integer> size) {
-        logger.info("Product list");
-        Page<Product> productsPage;
-        if (!partName.equals("")){
-            System.out.println("partName!=null");
-            productsPage = productService.filterByPriceAndName(minPrice, maxPrice, partName,
-                    PageRequest.of(page.orElse(1) - 1, size.orElse(5)));
-
-        } else{
-            System.out.println("partName==null");
-            productsPage = productService.filterByPrice(minPrice, maxPrice,
-                    PageRequest.of(page.orElse(1) - 1, size.orElse(5)));
-        }
-
-        model.addAttribute("productsPage", productsPage);
-        model.addAttribute("prevPageNumber", productsPage.hasPrevious() ? productsPage.previousPageable().getPageNumber() + 1 : -1);
-        model.addAttribute("nextPageNumber", productsPage.hasNext() ? productsPage.nextPageable().getPageNumber() + 1 : -1);
-
+    public String adminProductsPage(Model model) {
+        model.addAttribute("activePage", "Products");
+        model.addAttribute("products", productService.findAll());
         return "products";
     }
 
-    @GetMapping("new")
-    public String createProduct(Model model) {
-        logger.info("Create product form");
-        System.out.println("1 step");
-        model.addAttribute("product", new Product());
+    @GetMapping("{id}/edit")
+    public String adminEditProduct(Model model, @PathVariable("id") Long id) {
+        model.addAttribute("edit", true);
+        model.addAttribute("activePage", "Products");
+        model.addAttribute("product", productService.findById(id).orElseThrow(NotFoundException::new));
         model.addAttribute("categories", categoryRepository.findAll());
-        System.out.println(model.getAttribute("product"));
-        System.out.println(model.getAttribute("categories"));
+        model.addAttribute("brands", brandRepository.findAll());
+        model.addAttribute("newPictures", pictureRepository.findAll());
+        return "product";
+    }
+
+    @DeleteMapping("{id}/delete")
+    public String adminDeleteProduct(Model model, @PathVariable("id") Long id) {
+        model.addAttribute("activePage", "Products");
+        productService.deleteById(id);
+        return "redirect:/product";
+    }
+
+    @GetMapping("create")
+    public String adminCreateProduct(Model model) {
+        model.addAttribute("create", true);
+        model.addAttribute("activePage", "Products");
+        model.addAttribute("product", new ProductRepr());
+        model.addAttribute("categories", categoryRepository.findAll());
+        model.addAttribute("brands", brandRepository.findAll());
+        model.addAttribute("newPictures", pictureRepository.findAll());
         return "product";
     }
 
     @PostMapping
-    public String saveProduct(Product product) {
-        System.out.println(product.getCategory());
-        logger.info("Save product method");
+    public String adminUpsertProduct(Model model, RedirectAttributes redirectAttributes, ProductRepr product) {
+        model.addAttribute("activePage", "Products");
 
-        productService.save(product);
-        return "redirect:/product";
-    }
-
-//    @GetMapping("edit")
-//    public String editProduct(Model model) {
-//        logger.info("Edit Product form");
-//
-//        model.addAttribute("product", new Product());
-//        return "productEdit";
-//    }
-
-//    @PostMapping ("productEdit")
-//    public String editProduct(Product product, BindingResult bindingResult) {
-//        logger.info("Edit user method");
-//
-//        if (bindingResult.hasErrors()) {
-//            return "product";
-//        }
-//        productService.editProduct(product);
-//        return "redirect:/product";
-//    }
-
-    @GetMapping("edit")
-    public String editProduct(@RequestParam long id, Model model){
-
-        model.addAttribute("product", productService.findById(id));
-        return "product";
-
-    }
-
-    @DeleteMapping
-    public String deleteProduct(@RequestParam Long id){
-        System.out.println("delete");
-        productService.deleteProduct(id);
+        try {
+            productService.save(product);
+        } catch (Exception ex) {
+            logger.error("Problem with creating or updating product", ex);
+            redirectAttributes.addFlashAttribute("error", true);
+            if (product.getId() == null) {
+                return "redirect:/product/create";
+            }
+            return "redirect:/product/" + product.getId() + "/edit";
+        }
         return "redirect:/product";
     }
 }

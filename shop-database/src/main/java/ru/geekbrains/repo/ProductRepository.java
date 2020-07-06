@@ -13,7 +13,6 @@ import java.util.Optional;
 public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findByPriceGreaterThanEqualAndPriceLessThanEqual(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
 
-    //   @Query("from Product p where p.title like :name and p.price > :minPrice and p.price < :maxPrice")
     Page<Product>  findByTitleLikeAndPriceBetween (String title, BigDecimal minPrice, BigDecimal maxPrice, Pageable pabeable);
 
     Optional<Product> findByTitle(String title);
